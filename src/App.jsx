@@ -7,7 +7,7 @@ import "./App.css";
  */
 
 const COUNTRY_AGG_BASE =
-  "http://country-aggregator-api-env.eba-6iq87h7d.us-east-1.elasticbeanstalk.com";
+  "https://d2e8nmr8fhc8br.cloudfront.net";
 
 const SPLIT_API_URL = "https://d2isu9kxsrozg8.cloudfront.net/split/weighted";
 
@@ -50,7 +50,7 @@ function moneyFmt(amount, currencyCode) {
 function buildCountrySummaryUrl(countryName) {
   const name = (countryName || "").trim();
   const encoded = encodeURIComponent(name);
-  return `${COUNTRY_AGG_BASE}/countries/${encoded}/summary`;
+  return `${COUNTRY_AGG_BASE}/api/country/summary?name=${encoded}`;
 }
 
 function normalizeCountrySummary(raw, fallbackCountryName) {
