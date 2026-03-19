@@ -12,7 +12,7 @@ const COUNTRY_AGG_BASE =
 const SPLIT_API_URL = "https://d2isu9kxsrozg8.cloudfront.net/split/weighted";
 
 // ----------------------------- Helpers -----------------------------
-async function httpJson(url, options = {}) {
+async function httpJson(url, options = {}) { 
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
