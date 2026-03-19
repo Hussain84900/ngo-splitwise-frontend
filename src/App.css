@@ -1,0 +1,272 @@
+/* ============================================================
+   Donation Pool Split - Elegant Stylesheet with Color
+   Just replace src/App.css with this file. No JSX changes.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+
+/* --- Reset & Base --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Nunito Sans', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(160deg, #f0eeeb 0%, #e8ebe8 100%);
+  min-height: 100vh;
+  color: #2c2926;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Headings --- */
+h1, h2, h3 {
+  font-family: 'Source Serif 4', Georgia, serif;
+  letter-spacing: -0.01em;
+  color: #1a1714;
+}
+
+h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #1a8a6a;
+  display: inline-block;
+}
+
+h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #1a6b54;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0;
+  color: #2c5545;
+}
+
+/* --- Inputs --- */
+input {
+  font-family: 'Nunito Sans', system-ui, sans-serif !important;
+  font-size: 0.9rem !important;
+  border: 1.5px solid #c8d6d0 !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  background: #f8faf9 !important;
+  color: #2c2926 !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  outline: none !important;
+}
+
+input:focus {
+  border-color: #1a8a6a !important;
+  box-shadow: 0 0 0 3px rgba(26, 138, 106, 0.12);
+  background: #fff !important;
+}
+
+input::placeholder {
+  color: #a0b0a8;
+}
+
+/* --- Buttons --- */
+button {
+  font-family: 'Nunito Sans', system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: 0.01em;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Primary dark buttons - teal accent */
+button[style*="background: rgb(17, 24, 39)"],
+button[style*="background:#111827"] {
+  background: #1a6b54 !important;
+  border: none !important;
+  color: #fff !important;
+  padding: 10px 20px !important;
+}
+
+button[style*="background: rgb(17, 24, 39)"]:hover,
+button[style*="background:#111827"]:hover {
+  background: #1a8a6a !important;
+  box-shadow: 0 4px 12px rgba(26, 107, 84, 0.25);
+}
+
+/* Secondary white buttons */
+button[style*="background: white"],
+button[style*="background:white"] {
+  background: #fff !important;
+  border: 1.5px solid #c8d6d0 !important;
+  color: #1a6b54 !important;
+  padding: 10px 20px !important;
+}
+
+button[style*="background: white"]:hover,
+button[style*="background:white"]:hover {
+  background: #eef5f2 !important;
+  border-color: #1a8a6a !important;
+  color: #1a6b54 !important;
+}
+
+/* Danger/remove buttons - warm red */
+button[style*="background: rgb(254, 226, 226)"],
+button[style*="background:#fee2e2"] {
+  background: #fef0f0 !important;
+  border: 1.5px solid #e8bfbf !important;
+  color: #8b2020 !important;
+  font-size: 0.8rem !important;
+  padding: 7px 14px !important;
+  border-radius: 6px !important;
+}
+
+button[style*="background: rgb(254, 226, 226)"]:hover,
+button[style*="background:#fee2e2"]:hover {
+  background: #fde4e4 !important;
+  border-color: #d9a0a0 !important;
+}
+
+/* --- Card sections --- */
+section {
+  background: #ffffff !important;
+  border: 1px solid #d4ddd8 !important;
+  border-radius: 14px !important;
+  padding: 24px !important;
+  box-shadow: 0 2px 8px rgba(26, 107, 84, 0.06);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+section:hover {
+  box-shadow: 0 4px 16px rgba(26, 107, 84, 0.1);
+  border-color: #b8ccc4 !important;
+}
+
+/* --- Campaign items --- */
+div[style*="border: 1px solid rgb(238, 238, 238)"],
+div[style*="background: rgb(250, 250, 250)"] {
+  background: #f4f9f7 !important;
+  border: 1px solid #d4ddd8 !important;
+  border-radius: 10px !important;
+  padding: 14px 16px !important;
+  border-left: 4px solid #1a8a6a !important;
+  transition: background 0.15s ease;
+}
+
+div[style*="border: 1px solid rgb(238, 238, 238)"]:hover,
+div[style*="background: rgb(250, 250, 250)"]:hover {
+  background: #eef5f2 !important;
+}
+
+/* --- Table --- */
+table {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+}
+
+th {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: #1a6b54 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid #1a8a6a !important;
+  padding: 10px 10px !important;
+}
+
+td {
+  padding: 10px 10px !important;
+  border-bottom: 1px solid #e8efe9 !important;
+  vertical-align: middle !important;
+}
+
+tr:last-child td {
+  border-bottom: none !important;
+}
+
+tbody tr {
+  transition: background 0.12s ease;
+}
+
+tbody tr:hover {
+  background: #f4f9f7;
+}
+
+/* --- Horizontal rule --- */
+hr {
+  border: none !important;
+  border-top: 1.5px solid #d4ddd8 !important;
+  margin: 20px 0 !important;
+}
+
+/* --- Labels --- */
+label {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #2c5545 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- Code --- */
+code {
+  font-size: 0.72rem;
+  background: #e8efe9;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #2c5545;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* --- Bold text --- */
+b {
+  font-weight: 700;
+  color: #1a3d30;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b8ccc4;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8aada0;
+}
+
+/* --- Selection --- */
+::selection {
+  background: #c2e0d5;
+  color: #1a3d30;
+}
