@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import emailjs from "@emailjs/browser";
 import "./App.css";
+
 const COUNTRY_AGG_BASE =
   "https://d2e8nmr8fhc8br.cloudfront.net";
 
@@ -217,6 +218,17 @@ export default function App() {
     }
   }
 
+  async function handleDeleteCampaign(campaignId) {
+    try {
+      await httpJson(API_BASE + "/campaigns/" + campaignId, {
+        method: "DELETE",
+      });
+      setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
+    } catch (e) {
+      alert("Failed to delete campaign: " + e.message);
+    }
+  }
+
   async function handleSplit() {
     setSplitError("");
     setSplitResult(null);
@@ -279,7 +291,7 @@ export default function App() {
       (splitResult?.participants || [])
         .map((p) => {
           const shareText =
-            p.share == null ? "—" : moneyFmt(p.share, campaign.currency || currencyCode);
+            p.share == null ? "-" : moneyFmt(p.share, campaign.currency || currencyCode);
           return `${p.name} | weight=${p.weight} | share=${shareText}`;
         })
         .join("\n") || "No split calculated yet. Click 'Calculate split (API)' first.";
@@ -291,22 +303,18 @@ export default function App() {
     const templateParams = {
       to_email: to,
       generated_at: new Date().toLocaleString(),
-
       campaign_name: campaign.name,
-      country: campaign.country || countryInfo.countryName || countryName.trim(), // ✅
+      country: campaign.country || countryInfo.countryName || countryName.trim(),
       city: campaign.city,
       amount: String(campaign.amount),
       currency: campaign.currency,
-
       split_lines: splitLines,
       pledge_lines: pledgeLines,
     };
 
     try {
       setEmailSending(true);
-
       await emailjs.send(serviceId, templateId, templateParams, publicKey);
-
       setEmailStatus("Email sent successfully via EmailJS.");
     } catch (e) {
       setEmailError(e?.text || e?.message || "Failed to send email.");
@@ -325,11 +333,10 @@ export default function App() {
   }, [splitResult]);
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 20, fontFamily: "system-ui, Arial" }}>
-      <h1>Donation Pool Split (Pledges)</h1>
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 20 }}>
+      <h1>Donation Pool Split</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
-        {/* Campaign form */}
         <section style={card}>
           <h2>Add Campaign</h2>
 
@@ -351,12 +358,6 @@ export default function App() {
                 onChange={(e) => setCountryName(e.target.value)}
                 placeholder='e.g. "Ireland"'
               />
-              <div style={muted}>
-                Country API:{" "}
-                <code>
-                  {COUNTRY_AGG_BASE}/countries/{"{country_name}"}/summary
-                </code>
-              </div>
               {countryLoading ? <div style={muted}>Loading country details...</div> : null}
               {countryError ? <div style={errorSmall}>{countryError}</div> : null}
             </div>
@@ -374,10 +375,10 @@ export default function App() {
 
           <div style={{ marginTop: 8, fontSize: 13, color: "#444" }}>
             <div>
-              <b>Detected country:</b> {countryInfo.countryName || "—"}
+              <b>Detected country:</b> {countryInfo.countryName || "-"}
             </div>
             <div>
-              <b>City:</b> {countryInfo.city || "—"}
+              <b>City:</b> {countryInfo.city || "-"}
             </div>
             <div>
               <b>Currency:</b> {countryInfo.currency.code} - {countryInfo.currency.name}
@@ -396,7 +397,6 @@ export default function App() {
           {splitError ? <p style={error}>{splitError}</p> : null}
         </section>
 
-        {/* Campaigns list + Email */}
         <section style={card}>
           <h2>Campaigns</h2>
 
@@ -408,12 +408,22 @@ export default function App() {
             <div style={{ display: "grid", gap: 10 }}>
               {campaigns.map((c) => (
                 <div key={c.id} style={campaignItem}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ fontWeight: 800 }}>{c.name}</div>
-                    <div style={{ fontWeight: 800 }}>{moneyFmt(c.amount, c.currency)}</div>
-                  </div>
-                  <div style={mutedSmall}>
-                    Country: <b>{c.country || "—"}</b> &nbsp;|&nbsp; City: <b>{c.city}</b>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 800 }}>{c.name}</div>
+                      <div style={mutedSmall}>
+                        Country: <b>{c.country || "-"}</b> &nbsp;|&nbsp; City: <b>{c.city}</b>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ fontWeight: 800 }}>{moneyFmt(c.amount, c.currency)}</div>
+                      <button
+                        style={btnDangerSmall}
+                        onClick={() => handleDeleteCampaign(c.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -431,7 +441,7 @@ export default function App() {
           />
 
           <button
-            style={btnPrimary}
+            style={{ ...btnPrimary, marginTop: 10 }}
             onClick={() => sendCampaignSummaryEmail(campaignToEmail)}
             disabled={emailSending || !campaignToEmail}
           >
@@ -443,10 +453,9 @@ export default function App() {
         </section>
       </div>
 
-      {/* Members */}
       <section style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h2 style={{ margin: 0 }}>Members (Pledges to Weights)</h2>
+          <h2 style={{ margin: 0 }}>Members</h2>
           <button style={btnSecondary} onClick={addMember}>
             + Add member
           </button>
@@ -486,7 +495,7 @@ export default function App() {
                     </td>
 
                     <td style={td}>
-                      {share === null ? <span style={mutedSmall}>—</span> : moneyFmt(share, currencyCode)}
+                      {share === null ? <span style={mutedSmall}>-</span> : moneyFmt(share, currencyCode)}
                     </td>
 
                     <td style={td}>
