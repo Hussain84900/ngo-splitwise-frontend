@@ -1,18 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import emailjs from "@emailjs/browser";
-import "./App.css";
-
-/**
- * Donation Pool Split (Pledges) - React Frontend (CRA)
- */
-
 const COUNTRY_AGG_BASE =
-  "https://d2e8nmr8fhc8br.cloudfront.net";
+  "http://country-aggregator-api-env.eba-6iq87h7d.us-east-1.elasticbeanstalk.com";
 
-const SPLIT_API_URL = "https://d2isu9kxsrozg8.cloudfront.net/split/weighted";
+const API_BASE = "https://d2isu9kxsrozg8.cloudfront.net";
+const SPLIT_API_URL = API_BASE + "/split/weighted";
 
-// ----------------------------- Helpers -----------------------------
-async function httpJson(url, options = {}) { 
+async function httpJson(url, options = {}) {
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
@@ -38,10 +32,9 @@ async function httpJson(url, options = {}) {
 
 function moneyFmt(amount, currencyCode) {
   try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currencyCode,
-    }).format(Number(amount) || 0);
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: currencyCode }).format(
+      Number(amount) || 0
+    );
   } catch {
     return `${currencyCode} ${Number(amount || 0).toFixed(2)}`;
   }
@@ -50,14 +43,13 @@ function moneyFmt(amount, currencyCode) {
 function buildCountrySummaryUrl(countryName) {
   const name = (countryName || "").trim();
   const encoded = encodeURIComponent(name);
-  return `${COUNTRY_AGG_BASE}/api/country/summary?name=${encoded}`;
+  return `${COUNTRY_AGG_BASE}/countries/${encoded}/summary`;
 }
 
 function normalizeCountrySummary(raw, fallbackCountryName) {
   const safe = raw && typeof raw === "object" ? raw : {};
 
-  const rawCurrency =
-    safe.currency ?? safe.currencyCode ?? safe.currency_code ?? "USD";
+  const rawCurrency = safe.currency ?? safe.currencyCode ?? safe.currency_code ?? "USD";
   const currency =
     typeof rawCurrency === "string"
       ? { code: rawCurrency, name: rawCurrency, symbol: "" }
@@ -77,19 +69,16 @@ function normalizeCountrySummary(raw, fallbackCountryName) {
     "";
 
   return {
-    countryName:
-      safe.countryName ?? safe.name ?? safe.country ?? fallbackCountryName ?? "Unknown",
+    countryName: safe.countryName ?? safe.name ?? safe.country ?? fallbackCountryName ?? "Unknown",
     countryCode: safe.countryCode ?? safe.code ?? safe.iso2 ?? safe.iso ?? "--",
     currency,
     city,
     timezone: safe.timezone ?? safe.timeZone ?? safe.tz ?? "Unknown",
-    callingCode:
-      safe.callingCode ?? safe.calling_code ?? safe.dialCode ?? safe.dial_code ?? "",
+    callingCode: safe.callingCode ?? safe.calling_code ?? safe.dialCode ?? safe.dial_code ?? "",
     raw,
   };
 }
 
-// ----------------------------- API functions -----------------------------
 async function apiGetCountrySummary(countryName) {
   const url = buildCountrySummaryUrl(countryName);
   const data = await httpJson(url, { method: "GET" });
@@ -108,7 +97,6 @@ function parsePositiveNumber(value) {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-// ----------------------------- UI -----------------------------
 export default function App() {
   const [campaignTitle, setCampaignTitle] = useState("");
   const [countryName, setCountryName] = useState("");
@@ -116,11 +104,27 @@ export default function App() {
 
   const [countryLoading, setCountryLoading] = useState(false);
   const [countryError, setCountryError] = useState("");
-  const [countryInfo, setCountryInfo] = useState(() =>
-    normalizeCountrySummary(null, "Ireland")
-  );
+  const [countryInfo, setCountryInfo] = useState(() => normalizeCountrySummary(null, "Ireland"));
 
   const [campaigns, setCampaigns] = useState([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadCampaigns() {
+      try {
+        setCampaignsLoading(true);
+        const data = await httpJson(API_BASE + "/campaigns", { method: "GET" });
+        if (data && data.campaigns) {
+          setCampaigns(data.campaigns);
+        }
+      } catch (e) {
+        console.log("Could not load campaigns:", e.message);
+      } finally {
+        setCampaignsLoading(false);
+      }
+    }
+    loadCampaigns();
+  }, []);
 
   const [members, setMembers] = useState([
     { id: "m1", name: "Hussain", pledge: "6" },
@@ -136,10 +140,7 @@ export default function App() {
   const [emailError, setEmailError] = useState("");
   const [emailStatus, setEmailStatus] = useState("");
 
-  const parsedTarget = useMemo(
-    () => parsePositiveNumber(targetAmount),
-    [targetAmount]
-  );
+  const parsedTarget = useMemo(() => parsePositiveNumber(targetAmount), [targetAmount]);
   const currencyCode = countryInfo.currency.code;
 
   useEffect(() => {
@@ -168,9 +169,7 @@ export default function App() {
   }, [countryName]);
 
   function setMember(idx, patch) {
-    setMembers((prev) =>
-      prev.map((m, i) => (i === idx ? { ...m, ...patch } : m))
-    );
+    setMembers((prev) => prev.map((m, i) => (i === idx ? { ...m, ...patch } : m)));
     setSplitResult(null);
   }
 
@@ -187,7 +186,7 @@ export default function App() {
     setSplitResult(null);
   }
 
-  function handleAddCampaign() {
+  async function handleAddCampaign() {
     const title = campaignTitle.trim();
     const cName = countryName.trim();
 
@@ -196,17 +195,25 @@ export default function App() {
     if (parsedTarget <= 0) return alert("Amount must be > 0.");
 
     const city = countryInfo.city || "-";
+    const country = countryInfo.countryName || cName;
+    const currency = currencyCode || "USD";
 
-    const newCampaign = {
-      id: `camp_${Date.now()}`,
-      name: title,
-      country: countryInfo.countryName || cName,
-      city,
-      amount: parsedTarget,
-      currency: currencyCode || "USD",
-    };
+    try {
+      const saved = await httpJson(API_BASE + "/campaigns", {
+        method: "POST",
+        body: JSON.stringify({
+          name: title,
+          country: country,
+          city: city,
+          amount: parsedTarget,
+          currency: currency,
+        }),
+      });
 
-    setCampaigns((prev) => [newCampaign, ...prev]);
+      setCampaigns((prev) => [saved, ...prev]);
+    } catch (e) {
+      alert("Failed to save campaign: " + e.message);
+    }
   }
 
   async function handleSplit() {
@@ -271,13 +278,10 @@ export default function App() {
       (splitResult?.participants || [])
         .map((p) => {
           const shareText =
-            p.share == null
-              ? "-"
-              : moneyFmt(p.share, campaign.currency || currencyCode);
+            p.share == null ? "—" : moneyFmt(p.share, campaign.currency || currencyCode);
           return `${p.name} | weight=${p.weight} | share=${shareText}`;
         })
-        .join("\n") ||
-      "No split calculated yet. Click 'Calculate split (API)' first.";
+        .join("\n") || "No split calculated yet. Click 'Calculate split (API)' first.";
 
     const pledgeLines = members
       .map((m) => `${m.name} | weight=${m.pledge}`)
@@ -286,19 +290,22 @@ export default function App() {
     const templateParams = {
       to_email: to,
       generated_at: new Date().toLocaleString(),
+
       campaign_name: campaign.name,
-      country:
-        campaign.country || countryInfo.countryName || countryName.trim(),
+      country: campaign.country || countryInfo.countryName || countryName.trim(), // ✅
       city: campaign.city,
       amount: String(campaign.amount),
       currency: campaign.currency,
+
       split_lines: splitLines,
       pledge_lines: pledgeLines,
     };
 
     try {
       setEmailSending(true);
+
       await emailjs.send(serviceId, templateId, templateParams, publicKey);
+
       setEmailStatus("Email sent successfully via EmailJS.");
     } catch (e) {
       setEmailError(e?.text || e?.message || "Failed to send email.");
@@ -317,7 +324,7 @@ export default function App() {
   }, [splitResult]);
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 20 }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 20, fontFamily: "system-ui, Arial" }}>
       <h1>Donation Pool Split (Pledges)</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
@@ -343,18 +350,14 @@ export default function App() {
                 onChange={(e) => setCountryName(e.target.value)}
                 placeholder='e.g. "Ireland"'
               />
-              {/*<div style={muted}>
+              <div style={muted}>
                 Country API:{" "}
                 <code>
                   {COUNTRY_AGG_BASE}/countries/{"{country_name}"}/summary
                 </code>
-              </div>*/}
-              {countryLoading ? (
-                <div style={muted}>Loading country details...</div>
-              ) : null}
-              {countryError ? (
-                <div style={errorSmall}>{countryError}</div>
-              ) : null}
+              </div>
+              {countryLoading ? <div style={muted}>Loading country details...</div> : null}
+              {countryError ? <div style={errorSmall}>{countryError}</div> : null}
             </div>
 
             <div style={row}>
@@ -370,28 +373,21 @@ export default function App() {
 
           <div style={{ marginTop: 8, fontSize: 13, color: "#444" }}>
             <div>
-              <b>Detected country:</b> {countryInfo.countryName || "-"}
+              <b>Detected country:</b> {countryInfo.countryName || "—"}
             </div>
             <div>
-              <b>City:</b> {countryInfo.city || "-"}
+              <b>City:</b> {countryInfo.city || "—"}
             </div>
             <div>
-              <b>Currency:</b> {countryInfo.currency.code} -{" "}
-              {countryInfo.currency.name}
+              <b>Currency:</b> {countryInfo.currency.code} - {countryInfo.currency.name}
             </div>
           </div>
 
-          <div
-            style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}
-          >
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             <button style={btnPrimary} onClick={handleAddCampaign}>
               Add to Campaigns
             </button>
-            <button
-              style={btnSecondary}
-              onClick={handleSplit}
-              disabled={splitLoading}
-            >
+            <button style={btnSecondary} onClick={handleSplit} disabled={splitLoading}>
               {splitLoading ? "Calculating..." : "Calculate split (API)"}
             </button>
           </div>
@@ -403,27 +399,20 @@ export default function App() {
         <section style={card}>
           <h2>Campaigns</h2>
 
-          {campaigns.length === 0 ? (
+          {campaignsLoading ? (
+            <p style={muted}>Loading campaigns...</p>
+          ) : campaigns.length === 0 ? (
             <p style={muted}>No campaigns yet.</p>
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
               {campaigns.map((c) => (
                 <div key={c.id} style={campaignItem}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
-                  >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ fontWeight: 800 }}>{c.name}</div>
-                    <div style={{ fontWeight: 800 }}>
-                      {moneyFmt(c.amount, c.currency)}
-                    </div>
+                    <div style={{ fontWeight: 800 }}>{moneyFmt(c.amount, c.currency)}</div>
                   </div>
                   <div style={mutedSmall}>
-                    Country: <b>{c.country || "-"}</b> &nbsp;|&nbsp; City:{" "}
-                    <b>{c.city}</b>
+                    Country: <b>{c.country || "—"}</b> &nbsp;|&nbsp; City: <b>{c.city}</b>
                   </div>
                 </div>
               ))}
@@ -441,32 +430,21 @@ export default function App() {
           />
 
           <button
-            style={{ ...btnPrimary, marginTop: 10 }}
+            style={btnPrimary}
             onClick={() => sendCampaignSummaryEmail(campaignToEmail)}
             disabled={emailSending || !campaignToEmail}
           >
             {emailSending ? "Sending..." : "Send Campaign Email"}
           </button>
 
-          {emailError ? (
-            <div style={{ color: "#b91c1c", fontSize: 13 }}>{emailError}</div>
-          ) : null}
-          {emailStatus ? (
-            <div style={{ color: "#166534", fontSize: 13 }}>{emailStatus}</div>
-          ) : null}
+          {emailError ? <div style={{ color: "#b91c1c", fontSize: 13 }}>{emailError}</div> : null}
+          {emailStatus ? <div style={{ color: "#166534", fontSize: 13 }}>{emailStatus}</div> : null}
         </section>
       </div>
 
       {/* Members */}
       <section style={{ ...card, marginTop: 16 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <h2 style={{ margin: 0 }}>Members (Pledges to Weights)</h2>
           <button style={btnSecondary} onClick={addMember}>
             + Add member
@@ -492,9 +470,7 @@ export default function App() {
                       <input
                         style={cellInput}
                         value={m.name}
-                        onChange={(e) =>
-                          setMember(idx, { name: e.target.value })
-                        }
+                        onChange={(e) => setMember(idx, { name: e.target.value })}
                         placeholder="Name"
                       />
                     </td>
@@ -503,19 +479,13 @@ export default function App() {
                       <input
                         style={cellInput}
                         value={m.pledge}
-                        onChange={(e) =>
-                          setMember(idx, { pledge: e.target.value })
-                        }
+                        onChange={(e) => setMember(idx, { pledge: e.target.value })}
                         placeholder="Weight"
                       />
                     </td>
 
                     <td style={td}>
-                      {share === null ? (
-                        <span style={mutedSmall}>-</span>
-                      ) : (
-                        moneyFmt(share, currencyCode)
-                      )}
+                      {share === null ? <span style={mutedSmall}>—</span> : moneyFmt(share, currencyCode)}
                     </td>
 
                     <td style={td}>
@@ -538,7 +508,6 @@ export default function App() {
   );
 }
 
-// ----------------------------- Styles -----------------------------
 const card = {
   border: "1px solid #ddd",
   borderRadius: 12,
