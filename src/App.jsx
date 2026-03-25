@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import emailjs from "@emailjs/browser";
+import "./App.css";
 const COUNTRY_AGG_BASE =
   "http://country-aggregator-api-env.eba-6iq87h7d.us-east-1.elasticbeanstalk.com";
 
