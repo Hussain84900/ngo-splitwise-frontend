@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import emailjs from "@emailjs/browser";
 import "./App.css";
 const COUNTRY_AGG_BASE =
-  "http://country-aggregator-api-env.eba-6iq87h7d.us-east-1.elasticbeanstalk.com";
+  "https://d2e8nmr8fhc8br.cloudfront.net";
 
 const API_BASE = "https://d2isu9kxsrozg8.cloudfront.net";
 const SPLIT_API_URL = API_BASE + "/split/weighted";
